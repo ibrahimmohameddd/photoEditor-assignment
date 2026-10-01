@@ -13,8 +13,15 @@
 #include <string>
 #include <exception>
 #include "Image_Class.h"
-
 using namespace std;
+
+
+
+
+
+// -------------------------------------------- Filters. --------------------------------------------------------
+
+
 
 void grayscale(Image &image)
 {
@@ -37,6 +44,8 @@ void grayscale(Image &image)
         }
     }
 }
+
+
 
 void flipImage(Image &image)
 {
@@ -81,6 +90,8 @@ void flipImage(Image &image)
     }
 }
 
+
+
 void blackAndWhite(Image& image) {
     for(int y = 0; y < image.height; ++y) {
         for(int x = 0; x < image.width; ++x) {
@@ -101,6 +112,8 @@ void blackAndWhite(Image& image) {
         }
     }
 }
+
+
 
 void rotateImage(Image& image, int angle) {
     int height = image.height;
@@ -134,6 +147,8 @@ void rotateImage(Image& image, int angle) {
     image = temp;
 }
 
+
+
 void invertImage(Image& image){
     for(int y=0;y<image.height;y++){
         for(int x=0;x<image.width;x++){
@@ -146,6 +161,8 @@ void invertImage(Image& image){
             }
     }
 }
+
+
 
 void darkAndlightImage(Image& image, int percentage, int choice)
 {
@@ -177,6 +194,8 @@ void darkAndlightImage(Image& image, int percentage, int choice)
     }
 }
 
+
+
 void resizeImage(Image& image, int new_width, int new_height)
 {
     Image result(new_width, new_height);
@@ -196,6 +215,8 @@ void resizeImage(Image& image, int new_width, int new_height)
 
     image = result;
 }
+
+
 
 void addFrame(Image& image, int frame, int type){
     try{
@@ -260,6 +281,15 @@ void addFrame(Image& image, int frame, int type){
     }
 }
 
+
+
+
+
+
+// -------------------------------------------- Program Logic. -----------------------------------------------
+
+
+
 stack<Image> versions;
 string filename;
 bool isSaved = true;
@@ -289,7 +319,31 @@ void saveImage() {
     }
 }
 
+
+void loadImage(string name) {
+              try {
+                Image loadedImage(name);
+                image = loadedImage;
+                filename = name;
+                imageLoaded = true;
+                isSaved = true;
+
+                while(!versions.empty()) versions.pop();
+
+                cout << "Image loaded successfully. \n";
+            }
+            catch(...) {
+                cout << "Failed to load image.\n";
+            }
+  
+}
+
+
 int main() {
+
+    cout << "Enter file name: \n";
+    cin >> filename;
+    loadImage(filename);
 
     while(true) {
 
@@ -306,8 +360,22 @@ int main() {
         cin >> input;
 
         if (input == 0) {
+            if(!isSaved) {
+                cout << "There are some unsaved changes.\n";
+                cout << "Press 0 to cancel\n";
+                cout << "Press 1 to discard changes\n";
+                cout << "Press 2 to save changes\n";
+                int savingChoice;
+                cin >> savingChoice;
+
+                if (savingChoice == 0) {continue;}
+                else if (savingChoice == 1) {}
+                else if (savingChoice == 2) saveImage();
+            }
+            
             cout << "Exiting program. \n";
             return 0;
+            
         }
 
         else if (input == 1) {
@@ -328,20 +396,8 @@ int main() {
             cout << "Enter image name: \n";
             cin >> newName;
 
-            try {
-                Image loadedImage(newName);
-                image = loadedImage;
-                filename = newName;
-                imageLoaded = true;
-                isSaved = true;
+            loadImage(newName);
 
-                while(!versions.empty()) versions.pop();
-
-                cout << "Image loaded successfully. \n";
-            }
-            catch(...) {
-                cout << "Failed to load image.\n";
-            }
         }
 
         else if (input == 2) {
@@ -395,6 +451,11 @@ int main() {
                 cout << "Enter the frame size: ";
                 cin >> frame;
 
+                if (frame <= 0) {
+                    cout << "Invalid frame size.\n";
+                    break;
+                }
+
                 cout << "1. Simple frame" << endl;
                 cout << "2. Decorated frame" << endl;
                 cout << "Choose: ";
@@ -416,6 +477,11 @@ int main() {
                 cout << "Enter rotation angle (90, 180, or 270): ";
                 cin >> angle;
 
+                if(angle != 90 || angle != 180 || angle != 270) {
+                    cout << "Unsupported angle";
+                    break;
+                }
+
                 rotateImage(image, angle);
                 cout << "Rotate filter applied successfully.\n";
                 break;
@@ -432,7 +498,10 @@ int main() {
 
                 cout << "Enter percentage (0 - 100): ";
                 cin >> percentage;
-
+                if (percentage < 0 || percentage > 100) {
+                    cout << "Invalid percentage.\n";
+                    break;
+                }
                
                     if (choice == 1)
                     {
@@ -454,6 +523,12 @@ int main() {
 
                 cout << "Enter new height: ";
                 cin >> newHeight;
+ 
+                if (newWidth <= 0 || newHeight <= 0) {
+                    cout << "Invalid dimensions.\n";
+                    break;
+                }
+ 
                 resizeImage(image, newWidth, newHeight);
                 cout << "Resize filter applied successfully.\n";
                 break;
