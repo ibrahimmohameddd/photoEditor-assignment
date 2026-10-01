@@ -5,6 +5,7 @@
 // 4- Youssef Saied Helmy       -     20251496     -     addFrame / imageResize
 
 
+
 #include <algorithm>
 #include <stack>
 #include <iostream>
@@ -41,8 +42,8 @@ void flipImage(Image &image)
 {
     short choice;
 
-    cout << "Press 1 for vertical flip\n";
-    cout << "Press 2 for horizontal flip\n";
+    cout << "Press 1 for horizontal flip\n";
+    cout << "Press 2 for vertical flip\n";
     cin >> choice;
 
     switch (choice)
@@ -196,26 +197,63 @@ void resizeImage(Image& image, int new_width, int new_height)
     image = result;
 }
 
-void addFrame(Image& image, int frame){
+void addFrame(Image& image, int frame, int type){
     try{
         int newWidth = image.width + (2*frame);
         int newHeight = image.height + (2*frame);
         Image border_img(newWidth,newHeight);
-        for(int w =0;w<image.width;w++){
-            for(int h = 0;h<image.height;h++){
-                int red = image.getPixel(w,h,0);
 
-                int green = image.getPixel(w,h,1);
-                int blue = image.getPixel(w,h,2);
+        if(type == 1){
+            for(int w =0;w<image.width;w++){
+                for(int h = 0;h<image.height;h++){
+                    int red = image.getPixel(w,h,0);
+                    int green = image.getPixel(w,h,1);
+                    int blue = image.getPixel(w,h,2);
 
-                border_img.setPixel(w+frame,h+frame,0,red);
-                border_img.setPixel(w+frame,h+frame,1,green);
-                border_img.setPixel(w+frame,h+frame,2,blue);
-
+                    border_img.setPixel(w+frame,h+frame,0,red);
+                    border_img.setPixel(w+frame,h+frame,1,green);
+                    border_img.setPixel(w+frame,h+frame,2,blue);
+                }
             }
         }
-        image = border_img;
+        else{
+            int thin = max(1, frame / 10);
+            int outer = max(0, frame - 3 * thin);
 
+            for(int x = 0; x < newWidth; x++){
+                for(int y = 0; y < newHeight; y++){
+                    bool insidePhoto = x >= frame && x < frame + image.width &&
+                                       y >= frame && y < frame + image.height;
+
+                    int r, g, b;
+
+                    if(insidePhoto){
+                        r = image.getPixel(x - frame, y - frame, 0);
+                        g = image.getPixel(x - frame, y - frame, 1);
+                        b = image.getPixel(x - frame, y - frame, 2);
+                    }
+                    else{
+                        int d = min(min(x, y), min(newWidth - 1 - x, newHeight - 1 - y));
+                        int color;
+
+                        if(d < outer) color = 0;
+                        else if(d < outer + thin) color = 255;
+                        else if(d < outer + 2 * thin) color = 0;
+                        else color = 255;
+
+                        r = color;
+                        g = color;
+                        b = color;
+                    }
+
+                    border_img.setPixel(x, y, 0, r);
+                    border_img.setPixel(x, y, 1, g);
+                    border_img.setPixel(x, y, 2, b);
+                }
+            }
+        }
+
+        image = border_img;
     }
     catch(const exception& y){
         cerr<<"ERROR!!"<<y.what();
@@ -258,21 +296,11 @@ int main() {
         cout << "============================================\n";
         cout << "       IMAGE PROCESSING PROGRAM\n";
         cout << "============================================\n";
-
         cout << "Press 0 to exit program: \n";
-    
-        if(!imageLoaded) {
-            cout << "Press 1 to load an image: \n";
-        }
-        else {
-            cout << "Current image: " << filename << "\n";
-            cout << "Press 1 to load another image: \n";
-            cout << "Press 2 to apply filters: \n";
-
-            if(!versions.empty()) cout << "Press 3 to undo changes: \n";
-
-            cout << "Press 4 to save changes:\n";
-        }
+        cout << "Press 1 to load an image: \n";
+        cout << "Press 2 to apply filters: \n";
+        cout << "Press 3 to undo changes: \n";
+        cout << "Press 4 to save changes:\n";
 
         int input;
         cin >> input;
@@ -284,14 +312,14 @@ int main() {
 
         else if (input == 1) {
             if(!isSaved) {
-                cout << "There is unsaved changes.\n";
+                cout << "There are some unsaved changes.\n";
                 cout << "Press 0 to cancel\n";
                 cout << "Press 1 to discard changes\n";
                 cout << "Press 2 to save changes\n";
                 int savingChoice;
                 cin >> savingChoice;
 
-            if (savingChoice == 0) {continue;}
+                if (savingChoice == 0) {continue;}
                 else if (savingChoice == 1) {}
                 else if (savingChoice == 2) saveImage();
             }
@@ -307,7 +335,8 @@ int main() {
                 imageLoaded = true;
                 isSaved = true;
 
-            while(!versions.empty()) versions.pop();
+                while(!versions.empty()) versions.pop();
+
                 cout << "Image loaded successfully. \n";
             }
             catch(...) {
@@ -318,7 +347,7 @@ int main() {
         else if (input == 2) {
 
             if(!imageLoaded) {
-                cout << "Please load an image first \n";
+                cout << "Please load an image first (option 1).\n";
                 continue;
             }
 
@@ -329,13 +358,11 @@ int main() {
             cout << "4. Add Frame\n";
             cout << "5. Flip Image\n";
             cout << "6. Rotate Image\n";
-            cout << "7. Darken or Lighten Image \n";
+            cout << "7. Darken or Lighten Image\n";
             cout << "8. Resize Image\n";
 
             int filterChoice;
             cin >> filterChoice;
-
-            bool wasSaved = isSaved;
 
             if(filterChoice >= 1 && filterChoice <= 8) {
                 versions.push(image);
@@ -364,10 +391,16 @@ int main() {
                 break;
 
             case 4: {
-                int frame;
+                int frame, frameType;
                 cout << "Enter the frame size: ";
                 cin >> frame;
-                addFrame(image, frame);
+
+                cout << "1. Simple frame" << endl;
+                cout << "2. Decorated frame" << endl;
+                cout << "Choose: ";
+                cin >> frameType;
+
+                addFrame(image, frame, frameType);
                 cout << "Frame added successfully.\n";
                 break;
             }
@@ -400,13 +433,16 @@ int main() {
                 cout << "Enter percentage (0 - 100): ";
                 cin >> percentage;
 
-                if (percentage< 0|| percentage> 100 || (choice !=1 && choice!= 2)) cout << "Invalid input!" << endl;
-
-                else
-                {
-                    darkAndlightImage(image, percentage, choice);
-                    cout << "Brightness filter applied successfully.\n";
-                }
+               
+                    if (choice == 1)
+                    {
+                        darkAndlightImage(image, percentage, 1);
+                    }
+                    else if (choice == 2)
+                    {
+                        darkAndlightImage(image, percentage, 2);
+                    }
+                
                 break;
             }
 
@@ -418,7 +454,6 @@ int main() {
 
                 cout << "Enter new height: ";
                 cin >> newHeight;
-                
                 resizeImage(image, newWidth, newHeight);
                 cout << "Resize filter applied successfully.\n";
                 break;
@@ -433,7 +468,7 @@ int main() {
         else if(input == 3) {
 
             if(!imageLoaded) {
-                cout << "Please load an image first \n";
+                cout << "Please load an image first (option 1).\n";
                 continue;
             }
 
@@ -451,15 +486,15 @@ int main() {
         else if(input == 4) {
 
             if(!imageLoaded) {
-                cout << "Please load an image first\n";
+                cout << "Please load an image first (option 1).\n";
                 continue;
             }
 
-                saveImage();
-    }
+            saveImage();
+        }
 
         else {
-            cout << "Invalid option.\n"<<endl;;
+            cout << "Invalid option.\n";
         }
     }
 }
